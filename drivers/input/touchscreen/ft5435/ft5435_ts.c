@@ -496,10 +496,13 @@ static ssize_t tp_glove_id_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct ft5435_ts_data *data = NULL;
+	int ret;
 
 	data = dev_get_drvdata(dev);
 
-	return sprintf(buf, "%d", data->glove_id);
+	ret = snprintf(buf, 50, "glove_id show:%d\n", data->glove_id);
+
+	return ret;
 }
 
 static ssize_t tp_glove_id_store(struct device *dev,
@@ -548,9 +551,8 @@ static DEVICE_ATTR(glove_enable, 0644, tp_glove_id_show, tp_glove_id_store);
 void tp_glove_register (struct ft5435_ts_data *data)
 {
 	int rc = 0;
-	struct class *tp_device_class = NULL;
-	tp_device_class = class_create(THIS_MODULE, "tp_glove");
-	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "device");
+
+	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "tp_glove");
 	if (IS_ERR(tp_glove_dev))
 		pr_err("Failed to create device(glove_ctrl)!\n");
 
@@ -1493,7 +1495,6 @@ static int ft5435_ts_suspend(struct device *dev)
 	{
 		if (gesture_func_on) {
 			enable_irq(data->client->irq);
-			enable_irq_wake(data->client->irq);
 			ft_tp_suspend(data);
 			return 0;
 		}
@@ -1524,6 +1525,8 @@ static int ft5435_ts_suspend(struct device *dev)
 static int ft5435_ts_resume(struct device *dev)
 {
 	struct ft5435_ts_data *data = g_ft5435_ts_data;
+
+
 
 	if (!data->suspended) {
 		dev_dbg(dev, "Already in awake state\n");
@@ -3974,9 +3977,7 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 	while (retry--) {
 		err = ft5435_i2c_read(client, &reg_addr, 1, &reg_value, 1);
 		if (!(err < 0)) {
-#ifdef CONFIG_MACH_XIAOMI_MIDO
 			set_usb_charge_mode_par = 2;
-#endif
 			dev_info(&client->dev, "Device ID = 0x%x\n", reg_value);
 			break;
 		}
