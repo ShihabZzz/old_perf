@@ -3337,9 +3337,8 @@ static int mdss_dsi_ctrl_probe(struct platform_device *pdev)
 		ctrl_pdata->bklt_ctrl = UNKNOWN_CTRL;
 	}
 
-#ifdef CONFIG_MACH_XIAOMI_TISSOT
-	panel_data = &ctrl_pdata->panel_data;
-#endif
+	pm_qos_add_request(&ctrl_pdata->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
+PM_QOS_DEFAULT_VALUE);
 
 	rc = dsi_panel_device_register(pdev, dsi_pan_node, ctrl_pdata);
 	if (rc) {
