@@ -496,13 +496,10 @@ static ssize_t tp_glove_id_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct ft5435_ts_data *data = NULL;
-	int ret;
 
 	data = dev_get_drvdata(dev);
 
-	ret = snprintf(buf, 50, "glove_id show:%d\n", data->glove_id);
-
-	return ret;
+	return sprintf(buf, "%d", data->glove_id);
 }
 
 static ssize_t tp_glove_id_store(struct device *dev,
@@ -551,8 +548,9 @@ static DEVICE_ATTR(glove_enable, 0644, tp_glove_id_show, tp_glove_id_store);
 void tp_glove_register (struct ft5435_ts_data *data)
 {
 	int rc = 0;
-
-	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "tp_glove");
+	struct class *tp_device_class = NULL;
+	tp_device_class = class_create(THIS_MODULE, "tp_glove");
+	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "device");
 	if (IS_ERR(tp_glove_dev))
 		pr_err("Failed to create device(glove_ctrl)!\n");
 
@@ -1495,6 +1493,7 @@ static int ft5435_ts_suspend(struct device *dev)
 	{
 		if (gesture_func_on) {
 			enable_irq(data->client->irq);
+			enable_irq_wake(data->client->irq);
 			ft_tp_suspend(data);
 			return 0;
 		}
@@ -1525,8 +1524,6 @@ static int ft5435_ts_suspend(struct device *dev)
 static int ft5435_ts_resume(struct device *dev)
 {
 	struct ft5435_ts_data *data = g_ft5435_ts_data;
-
-
 
 	if (!data->suspended) {
 		dev_dbg(dev, "Already in awake state\n");
@@ -1627,7 +1624,6 @@ static void fb_notify_resume_work(struct work_struct *work)
 		container_of(work, struct ft5435_ts_data, fb_notify_work);
 	ft5435_ts_resume(&ft5435_data->client->dev);
 }
-
 static int fb_notifier_callback(struct notifier_block *self,
 				 unsigned long event, void *data)
 {
@@ -1635,7 +1631,6 @@ static int fb_notifier_callback(struct notifier_block *self,
 	int *blank;
 	struct ft5435_ts_data *ft5435_data =
 		container_of(self, struct ft5435_ts_data, fb_notif);
-
 	if (evdata && evdata->data && ft5435_data && ft5435_data->client) {
 		blank = evdata->data;
 		if (ft5435_data->pdata->resume_in_workqueue) {
@@ -1658,7 +1653,6 @@ static int fb_notifier_callback(struct notifier_block *self,
 			}
 		}
 	}
-
 	return 0;
 }
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
@@ -1667,7 +1661,6 @@ static void ftft5346_ts_early_suspend(struct early_suspend *handler)
 	struct ftft5346_ts_data *data = container_of(handler,
 						   struct ft5435_ts_data,
 						   early_suspend);
-
 	/*
 	 * During early suspend/late resume, the driver doesn't access xPU/SMMU
 	 * protected HW resources. So, there is no compelling need to block,
@@ -1677,18 +1670,15 @@ static void ftft5346_ts_early_suspend(struct early_suspend *handler)
 	ft5435_secure_touch_stop(data, false);
 	ft5435_ts_suspend(&data->client->dev);
 }
-
 static void ft5435_ts_late_resume(struct early_suspend *handler)
 {
 	struct ft5435_ts_data *data = container_of(handler,
 						   struct ft5435_ts_data,
 						   early_suspend);
-
 	ft5435_secure_touch_stop(data, false);
 	ft5435_ts_resume(&data->client->dev);
 }
 #endif
-
 #endif
 
 static int ft5435_auto_cal(struct i2c_client *client)
