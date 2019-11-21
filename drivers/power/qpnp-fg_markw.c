@@ -569,10 +569,10 @@ struct fg_chip {
 	enum slope_limit_status	slope_limit_sts;
 	u32			slope_limit_temp;
 	u32			slope_limit_coeffs[SLOPE_LIMIT_MAX];
-    bool                use_last_soc;	
-	int                        last_soc;			
-	bool                        use_last_cc_soc;			
-	int64_t                        last_cc_soc;
+	bool                use_last_soc;
+	int                 last_soc;
+	bool                use_last_cc_soc;
+	int64_t             last_cc_soc;
 	/* Batt_info restore */
 	int			batt_info[BATT_INFO_MAX];
 	int			batt_info_id;
@@ -4972,7 +4972,7 @@ static int populate_system_data(struct fg_chip *chip)
 		pr_err("Failed to read ocv junctions: %d\n", rc);
 		goto done;
 	}
-	
+
 	chip->ocv_junction_p1p2 = buffer[0] * 100 / 255;
 	chip->ocv_junction_p2p3 = buffer[1] * 100 / 255;
 
@@ -4981,7 +4981,7 @@ static int populate_system_data(struct fg_chip *chip)
 		pr_err("Failed to load battery aging data, rc:%d\n", rc);
 		goto done;
 	}
-	
+
 	rc = fg_mem_read(chip, buffer, CUTOFF_VOLTAGE_REG, 2, 0, 0);
 	if (rc) {
 		pr_err("Failed to read cutoff voltage: %d\n", rc);
@@ -7645,6 +7645,7 @@ static int fg_probe(struct spmi_device *spmi)
 
 	chip->spmi = spmi;
 	chip->dev = &(spmi->dev);
+	chip->bcl_lpm_disabled = 1;
 
 	wakeup_source_init(&chip->empty_check_wakeup_source.source,
 			"qpnp_fg_empty_check");
